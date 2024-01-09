@@ -1,0 +1,139 @@
+As of Summer '23 release SOQL can now query 4 levels deep for parent/child relationships.
+When called via REST API!
+
+Level 1 (Root)  SELECT Name, Description,
+Level 2             (SELECT FirstName, LastName,
+Level 3                 (SELECT Name,
+Level 4                     (SELECT WorkOrderNumber, Subject, Description,
+Level 5                         (SELECT LineItemNumber, Description FROM WorkOrderLineItems) 
+                            FROM WorkOrders)
+                        FROM Assets) 
+                    FROM Contacts)
+                FROM Account
+
+REST Request:
+GET .../services/data/v59.0/query?q=SELECT Name, Description, (SELECT FirstName, LastName, (SELECT Name, 
+(SELECT WorkOrderNumber, Subject, Description, (SELECT LineItemNumber, Description FROM WorkOrderLineItems) 
+FROM WorkOrders) FROM Assets) FROM Contacts) FROM Account
+
+The query returns a single, nested JSON response containing all the selected fields from the Account object 
+and the related Contacts →Assets → WorkOrders → WorkOrderLineItems child objects.
+
+{
+  "totalSize": 1,
+  "done": true,
+  "records": [
+    {
+      "attributes": {
+      "type": "Account",
+      "url": "/services/data/v59.0/sobjects/Account/0018W00002A4IAPQA3"
+      },
+      "Name": "ACME Corp",
+      "Description": "ACME Corporation Inc., a multinational manufacturer.",
+      "Contacts": {
+      "totalSize": 2,
+        "done": true,
+        "records": [
+          {
+            "attributes": {
+              "type": "Contact",
+              "url": "/services/data/v59.0/sobjects/Contact/0038W000020wJ8hQAE"
+            },
+            "FirstName": "Stephanie",
+            "LastName": "Simpkins",
+            "Assets": null
+          },
+          {
+            "attributes": {
+              "type": "Contact",
+              "url": "/services/data/v59.0/sobjects/Contact/0038W000020wJDXQA2"
+            },
+            "FirstName": "Ian",
+            "LastName": "Duncan",
+            "Assets": {
+              "totalSize": 2,
+              "done": true,
+              "records": [
+                {
+                  "attributes": {
+                    "type": "Asset",
+                    "url": "/services/data/v59.0/sobjects/Asset/02i8W00000GGWN3QAP"
+                  },
+                  "Name": "Laptop",
+                  "WorkOrders": {
+                    "totalSize": 2,
+                    "done": true,
+                    "records": [
+                      {
+                        "attributes": {
+                          "type": "WorkOrder",
+                          "url": "/services/data/v59.0/sobjects/WorkOrder/0WO8W00000GfohTWAR"
+                        },
+                        "WorkOrderNumber": "00000002",
+                        "Subject": "Ship new laptop",
+                        "Description": "Ship new laptop to recipient's address.",
+                        "WorkOrderLineItems": {
+                          "totalSize": 1,
+                          "done": true,
+                          "records": [
+                            {
+                              "attributes": {
+                                "type": "WorkOrderLineItem",
+                                "url": "/services/data/v59.0/sobjects/WorkOrderLineItem/1WL8W000000f50UWAQ"
+                              },
+                              "LineItemNumber": "00000001",
+                              "Description": "Create shipping label"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "attributes": {
+                          "type": "WorkOrder",
+                          "url": "/services/data/v59.0/sobjects/WorkOrder/0WO8W00000GfoOQWAZ"
+                        },
+                        "WorkOrderNumber": "00000001",
+                        "Subject": "Setup new laptop",
+                        "Description": "Setup new laptop by installing and configuring all business software.",
+                        "WorkOrderLineItems": {
+                          "totalSize": 2,
+                          "done": true,
+                          "records": [
+                            {
+                              "attributes": {
+                                "type": "WorkOrderLineItem",
+                                "url": "/services/data/v59.0/sobjects/WorkOrderLineItem/1WL8W000000f50KWAQ"
+                              },
+                              "LineItemNumber": "00000001",
+                              "Description": "Install and configure VPN software"
+                            },
+                            {
+                              "attributes": {
+                                "type": "WorkOrderLineItem",
+                                "url": "/services/data/v59.0/sobjects/WorkOrderLineItem/1WL8W000000f50PWAQ"
+                              },
+                              "LineItemNumber": "00000002",
+                              "Description": "Install and configure office productivity software"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "attributes": {
+                    "type": "Asset",
+                    "url": "/services/data/v59.0/sobjects/Asset/02i8W00000GGWOaQAP"
+                  },
+                  "Name": "Monitor",
+                  "WorkOrders": null
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
